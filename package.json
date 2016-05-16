@@ -1,0 +1,30 @@
+{
+  "name": "jquery-clockpicker",
+  "version": "0.0.1",
+  "description": "Time picker based on android material for jQuery",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kotfire/jquery-clockpicker.git"
+  },
+  "keywords": [
+    "jquery",
+    "timepicker",
+    "clockpicker",
+    "time",
+    "material",
+    "clock"
+  ],
+  "author": "Gustavo Real <kotdesigns@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kotfire/jquery-clockpicker/issues"
+  },
+  "homepage": "https://github.com/kotfire/jquery-clockpicker",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^2.0.7",
+    "gulp-concat": "^2.6.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^1.5.3"
+  }
+}
