@@ -745,6 +745,7 @@
             this.input.prop('value', value);
             this.lastVal = this.input.prop('value');
             if (value !== last) {
+                this.input.trigger('change');
                 this.input.triggerHandler('change');
                 if (! this.isInput) {
                     this.element.trigger('change');
