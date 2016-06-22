@@ -913,20 +913,22 @@
         },
 
         _updateInput: function() {
-            var last = this.input.prop('value'),
-                value = leadingZero(this.hours) + ':' + leadingZero(this.minutes);
-        
-            if (this.options.format === '12h') {
-                value = value + this.amOrPm;
-            }
+            if (this.hours && this.minutes) {
+                var last = this.input.prop('value'),
+                    value = leadingZero(this.hours) + ':' + leadingZero(this.minutes);
+            
+                if (this.options.format === '12h') {
+                    value = value + this.amOrPm;
+                }
 
-            this.input.prop('value', value);
-            this.lastVal = this.input.prop('value');
-            if (value !== last) {
-                this.input.trigger('change');
-                this.input.triggerHandler('change');
-                if (! this.isInput) {
-                    this.element.trigger('change');
+                this.input.prop('value', value);
+                this.lastVal = this.input.prop('value');
+                if (value !== last) {
+                    this.input.trigger('change');
+                    this.input.triggerHandler('change');
+                    if (! this.isInput) {
+                        this.element.trigger('change');
+                    }
                 }
             }
         },
