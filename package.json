@@ -1,6 +1,6 @@
 {
   "name": "jquery-clockpicker",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Time picker based on android material for jQuery",
   "repository": {
     "type": "git",
