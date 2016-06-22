@@ -34,6 +34,7 @@
     "README.md"
   ],
   "dependencies": {
-    "jquery" : ">= 1.7"
-  }
+    "jquery": ">= 1.7"
+  },
+  "version": "0.0.5"
 }
