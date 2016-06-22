@@ -913,7 +913,7 @@
         },
 
         _updateInput: function() {
-            if (this.hours && this.minutes) {
+            if (this.hasOwnProperty('hours') && this.hasOwnProperty('minutes')) {
                 var last = this.input.prop('value'),
                     value = leadingZero(this.hours) + ':' + leadingZero(this.minutes);
             
