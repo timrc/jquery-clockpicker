@@ -21,6 +21,10 @@
 }
 
 .jqclockpicker-header {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+
 	display: table;
 	width: 100%;
     padding: 10px 20px;
@@ -59,19 +63,6 @@
 .jqclockpicker-footer {
 	background: #FFF;
 	padding: 15px;
-}
-
-.jqclockpicker-tick {
-	font-size: 12px;
-	border-radius: 50%;
-	color: #666;
-	color: rgba(0, 0, 0, 0.87);
-	line-height: 26px;
-	text-align: center;
-	width: 26px;
-	height: 26px;
-	position: absolute;
-	cursor: pointer;
 }
 
 .jqclockpicker-plate {
@@ -146,13 +137,23 @@
 	background-color: rgb(192, 229, 247);
 	background-color: rgba(0, 149, 221, .25);
 }
+
+.jqclockpicker-tick.disabled {
+    color: #ccc;
+    color: rgba(0, 0, 0, 0.16);
+    background-color: transparent;
+    cursor: not-allowed;
+}
+
 .jqclockpicker-button:hover {
 	background-image: none;
 	background-color: #ebebeb;
 }
+
 .jqclockpicker-button:focus {
 	outline: none!important;
 }
+
 .jqclockpicker-dial {
 	-webkit-transition: -webkit-transform 350ms, opacity 350ms;
 	-moz-transition: -moz-transform 350ms, opacity 350ms;

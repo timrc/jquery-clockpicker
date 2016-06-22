@@ -62,6 +62,13 @@
         '</div>'
     ].join('');
 
+    // Clock Time Object
+    var ClockTime = function(hours, minutes, amOrPm) {
+        this.hours = hours || 0;
+        this.minutes = minutes || 0;
+        this.amOrPm = amOrPm || 'AM';
+    };
+
     // Default options
     JQClockPicker.DEFAULTS = {
         autoClose: true,
@@ -71,6 +78,7 @@
         cancelText: 'Cancel',
         defaultTime: '', // default time, 'now' or '13:14' e.g.
         timeFromNow: 0, // set default time to * milliseconds from now (using with default = 'now')
+        minTime: null, // min time, 'now' or '13:14' e.g.
         vibrate: true,
         position: 'bottom',
         alignment: 'left',
@@ -166,12 +174,16 @@
                 self.amOrPm = "AM";
                 self.amPmBlock.find('.jqclockpicker-am-button').addClass('jqclockpicker-active');
                 self.amPmBlock.find('.jqclockpicker-pm-button').removeClass('jqclockpicker-active');
+
+                self._checkTimeLimits();
             });
 
             this.amPmBlock.on('click', '.jqclockpicker-pm-button', function () {
                 self.amOrPm = "PM";
                 self.amPmBlock.find('.jqclockpicker-pm-button').addClass('jqclockpicker-active');
                 self.amPmBlock.find('.jqclockpicker-am-button').removeClass('jqclockpicker-active');
+
+                self._checkTimeLimits();
             });
 
             amPmButtons.appendTo(this.amPmBlock);
@@ -206,6 +218,11 @@
 
         // Bind input events
         input.on('keyup', $.proxy(this._doKeyUp, this));
+        input.on('blur', $.proxy(function() {
+            if (this.options.autoClose) {
+                this._updateInput();
+            }
+        }, this));
 
         // Build ticks
         var tickTpl = $('<div class="jqclockpicker-tick"></div>'),
@@ -499,16 +516,11 @@
                 this.isAppended = true;
             }
 
-            var trimedValue = ((this.input.prop('value') || this.options.defaultTime || '') + '').replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+            var value = this.input.prop('value') || this.options.defaultTime || '';
 
-            if (trimedValue === 'now') {
-                var now = new Date(+ new Date() + this.options.timeFromNow);
-                this.hours = now.getHours();
-                this.minutes = now.getMinutes();
-                this.amOrPm = getMeridian(this.hours);
-            } else {
-                this._parseTime(trimedValue);
-            }
+            var time = this._parseTime(value, this.options.timeFromNow);
+
+            this._setTime(time);
 
             this._updateLabels();
 
@@ -539,6 +551,11 @@
             raiseCallback(this.options.afterShow);
         },
 
+        // Set time
+        setTime: function(value) {
+            this._setTime(this._parseTime(value));
+        },
+
         // Hide template
         hide: function() {
             raiseCallback(this.options.beforeHide);
@@ -556,6 +573,8 @@
 
         // Toggle to hours or minutes view
         toggleView: function(view, delay) {
+            var self = this;
+
             var raiseAfterShowHours = false;
             var raiseAfterShowMinutes = false;
             if (view === 'hours') {
@@ -571,6 +590,8 @@
                 hideView = isHours ? this.minutesView : this.hoursView;
 
             this.currentView = view;
+
+            this._checkTimeLimits();
 
             this.hoursLabel.toggleClass('jqclockpicker-active', isHours);
             this.minutesLabel.toggleClass('jqclockpicker-active', !isHours);
@@ -676,6 +697,25 @@
                 }
             }
 
+            // Ignore out of range ticks.
+            var minTime = this._parseTime(this.options.minTime);
+
+            if (isHours) {
+                if (value < minTime.hours) {
+                    return;
+                }
+            } else {
+                var hours = this.hours;
+                if (this.options.format === '12h') {
+                    if (this.amOrPm === 'PM') {
+                        hours += 12;
+                    }
+                }
+                if (hours <= minTime.hours && value < minTime.minutes) {
+                    return;
+                }
+            }
+
             // Once hours or minutes changed, vibrate the device
             if (this[this.currentView] !== value) {
                 if (vibrate && this.options.vibrate) {
@@ -728,6 +768,8 @@
                 // Or place it at the bottom
                 this.g.insertBefore(this.hand, this.bg);
             }
+
+            return true;
         },
 
         // Hours and minutes are selected
@@ -735,22 +777,7 @@
             raiseCallback(this.options.beforeDone);
             this.hide();
         
-            var last = this.input.prop('value'),
-                value = leadingZero(this.hours) + ':' + leadingZero(this.minutes);
-        
-            if (this.options.format === '12h') {
-                value = value + this.amOrPm;
-            }
-
-            this.input.prop('value', value);
-            this.lastVal = this.input.prop('value');
-            if (value !== last) {
-                this.input.trigger('change');
-                this.input.triggerHandler('change');
-                if (! this.isInput) {
-                    this.element.trigger('change');
-                }
-            }
+            this._updateInput();
 
             if (this.options.autoClose) {
                 this.input.trigger('blur');
@@ -789,30 +816,140 @@
             }
         },
 
-        // Parse time
-        _parseTime: function(value) {
-            var val = value.replace(/^\s\s*/, '').replace(/\s\s*$/, '').toUpperCase(),
-                match = val.match(/^([0-9]|0[0-9]|1[0-9]|2[0-3])(?::)?(?:(?::)([0-5][0-9])\s*(AM|PM)?)?$/);
-            if (match) {
-                this.hours = match[1] ? +match[1] : 0;
-                this.minutes = match[2] ? +match[2] : 0;
-                this.amOrPm = match[3] || null;
+        _parseTime: function(value, addMilliseconds) {
+            var trimedValue = (value + '').replace(/^\s\s*/, '').replace(/\s\s*$/, ''),
+                hours,
+                minutes,
+                amOrPm;
+
+            if (trimedValue === 'now') {
+                var now = new Date( +new Date() + (addMilliseconds || 0));
+
+                hours = now.getHours();
+                minutes = now.getMinutes();
+                amOrPm = getMeridian(this.hours);
             } else {
-                this.hours = 0;
-                this.minutes = 0;
+                var val = (value + '').replace(/^\s\s*/, '').replace(/\s\s*$/, '').toUpperCase(),
+                    match = val.match(/^([0-9]|0[0-9]|1[0-9]|2[0-3])(?::)?(?:(?::)([0-5][0-9])\s*(AM|PM)?)?$/);
+                if (match) {
+                    hours = match[1] ? +match[1] : 0;
+                    minutes = match[2] ? +match[2] : 0;
+                    amOrPm = match[3] || null;
+                } else {
+                    hours = 0;
+                    minutes = 0;
+                }
             }
+
+            return new ClockTime(hours, minutes, amOrPm);
+        },
+
+        // Set time from ClockTime object
+        _setTime: function(timeObject) {
+            this.hours = timeObject.hours;
+            this.minutes = timeObject.minutes;
+            this.amOrPm = timeObject.amOrPm;
+
+            this._checkTimeLimits();
 
             this._updateLabels();
 
             this.resetClock();
         },
 
+        _checkTimeLimits: function() {
+            this._checkMinTime();
+        },
+
+        _checkMinTime: function() {
+            var self = this;
+
+            var minTime = this._parseTime(this.options.minTime);
+
+            var hours = this.hours;
+            if (self.options.format === '12h') {
+                if (self.amOrPm === 'PM') {
+                    hours += 12;
+                }
+            }
+            if (hours < minTime.hours || (hours == minTime.hours && this.minutes < minTime.minutes)) {
+                this.hours = minTime.hours;
+                this.minutes = minTime.minutes;
+            }
+
+            var isHours = this.currentView == 'hours';
+
+            // Add disabled class to out of range ticks.
+            if (isHours) {
+                this[isHours ? 'hoursView' : 'minutesView'].find('.jqclockpicker-tick').each(function() {
+                    var tick = $(this),
+                        hours = parseInt(tick.html());
+
+                    if (self.options.format === '12h') {
+                        if (self.amOrPm === 'PM') {
+                            hours += 12;
+                        }
+                    }
+
+                    tick.toggleClass('disabled', hours < minTime.hours);
+                });
+            } else {
+                var hours = this.hours;
+
+                if (self.options.format === '12h') {
+                    if (self.amOrPm === 'PM') {
+                        hours += 12;
+                    }
+                }
+                if (hours <= minTime.hours) {
+                    this[isHours ? 'hoursView' : 'minutesView'].find('.jqclockpicker-tick').each(function() {
+                        var tick = $(this);
+                        tick.toggleClass('disabled', tick.html() < minTime.minutes);
+                    });
+                } else {
+                    this['minutesView'].find('.jqclockpicker-tick').removeClass('disabled');
+                }
+            }
+        },
+
+        _updateInput: function() {
+            var last = this.input.prop('value'),
+                value = leadingZero(this.hours) + ':' + leadingZero(this.minutes);
+        
+            if (this.options.format === '12h') {
+                value = value + this.amOrPm;
+            }
+
+            this.input.prop('value', value);
+            this.lastVal = this.input.prop('value');
+            if (value !== last) {
+                this.input.trigger('change');
+                this.input.triggerHandler('change');
+                if (! this.isInput) {
+                    this.element.trigger('change');
+                }
+            }
+        },
+
         // Synchronise manual entry
         _doKeyUp: function(event) {
             if (this.input.val() !== this.lastVal) {
-                this._parseTime(this.input.val());
+                this.setTime(this.input.val());
             }
             return true;
+        },
+
+        _setOption: function(name, value) {
+            if (name in JQClockPicker.DEFAULTS) {
+                if (value === 'default') {
+                    this.options[name] = JQClockPicker.DEFAULTS[name];
+                } else {
+                    this.options[name] = value;
+                }
+
+                this._checkTimeLimits();
+                this._updateInput();
+            }
         },
     });
 
@@ -827,8 +964,10 @@
                 var options = $.extend({}, JQClockPicker.DEFAULTS, $this.data(), typeof option == 'object' && option);
                 $this.data('jqclockpicker', new JQClockPicker($this, options));
             } else {
-                // Manual operations. show, hide, remove, e.g.
-                if (typeof data[option] === 'function') {
+                if (option === 'option' && args.length === 2 && typeof args[1] === 'string') {
+                    data._setOption.apply(data, args);
+                } else if (typeof data[option] === 'function') {
+                    // Manual operations. show, hide, remove, e.g.
                     data[option].apply(data, args);
                 }
             }
