@@ -19,6 +19,7 @@
   "bugs": {
     "url": "https://github.com/kotfire/jquery-clockpicker/issues"
   },
+  "main": "./dist/jquery-clockpicker.js",
   "homepage": "https://github.com/kotfire/jquery-clockpicker",
   "devDependencies": {
     "gulp": "^3.9.1",
