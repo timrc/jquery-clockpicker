@@ -109,7 +109,7 @@
 
     // Get a unique id
     var idCounter = 0;
-  
+
     function uniqueId(prefix) {
         var id = ++idCounter + '';
         return prefix ? prefix + id : id;
@@ -244,19 +244,20 @@
                 tick.on(mousedownEvent, mousedown);
             }
         } else {
-            for (i = 0; i < 24; i += 1) {
+            for (i = 1; i <= 24; i += 1) {
                 tick = tickTpl.clone();
                 radian = i / 6 * Math.PI;
-                var inner = i > 0 && i < 13;
+                // var inner = i > 0 && i < 13;
+                var inner = i > 12;
                 radius = inner ? innerRadius : outerRadius;
                 tick.css({
                     left: dialRadius + Math.sin(radian) * radius - tickRadius,
                     top: dialRadius - Math.cos(radian) * radius - tickRadius
                 });
-                if (inner) {
+                if (!inner) {
                     tick.css('font-size', '115%');
                 }
-                tick.html(i === 0 ? '00' : i);
+                tick.html(i === 24 ? '00' : i);
                 hoursView.append(tick);
                 tick.on(mousedownEvent, mousedown);
             }
@@ -316,11 +317,11 @@
             // Mousemove on document
             $doc.off(mousemoveEvent).on(mousemoveEvent, function(e) {
                 e.preventDefault();
-                
+
                 var isTouch = /^touch/.test(e.type),
                     x = (isTouch ? e.originalEvent.touches[0] : e).pageX - x0,
                     y = (isTouch ? e.originalEvent.touches[0] : e).pageY - y0;
-                
+
                 if (!moved && x === dx && y === dy) {
                     // Clicking in chrome on windows will trigger a mousemove event
                     return;
@@ -343,11 +344,11 @@
                     raiseCallback(self.options.beforeMinuteSelect);
                     raiseAfterMinuteSelect = true;
                 }
-                
+
                 var isTouch = /^touch/.test(e.type),
                     x = (isTouch ? e.originalEvent.changedTouches[0] : e).pageX - x0,
                     y = (isTouch ? e.originalEvent.changedTouches[0] : e).pageY - y0;
-                    
+
                 if ((space || moved) && x === dx && y === dy) {
                     self.setHand(x, y);
                 }
@@ -384,34 +385,34 @@
             // Draw clock hands and others
             var canvas = template.find('.jqclockpicker-canvas'),
                 svg = createSvgElement('svg');
-          
+
             svg.setAttribute('class', 'jqclockpicker-svg');
             svg.setAttribute('width', diameter);
             svg.setAttribute('height', diameter);
-          
+
             var g = createSvgElement('g');
-            
+
             g.setAttribute('transform', 'translate(' + dialRadius + ',' + dialRadius + ')');
-            
+
             var bearing = createSvgElement('circle');
-            
+
             bearing.setAttribute('class', 'jqclockpicker-canvas-bearing');
             bearing.setAttribute('cx', 0);
             bearing.setAttribute('cy', 0);
             bearing.setAttribute('r', 2);
-              
+
             var hand = createSvgElement('line');
-            
+
             hand.setAttribute('x1', 0);
             hand.setAttribute('y1', 0);
-            
+
             var bg = createSvgElement('circle');
-            
+
             bg.setAttribute('class', 'jqclockpicker-canvas-bg');
             bg.setAttribute('r', tickRadius);
-              
+
             var fg = createSvgElement('circle');
-            
+
             fg.setAttribute('class', 'jqclockpicker-canvas-fg');
             fg.setAttribute('r', 3.5);
 
@@ -625,11 +626,11 @@
                 isHours = view === 'hours',
                 unit = Math.PI / (isHours ? 6 : 30),
                 radian = value * unit,
-                radius = isHours && value > 0 && value < 13 ? innerRadius : outerRadius,
+                radius = isHours && value > 12 ? innerRadius : outerRadius,
                 x = Math.sin(radian) * radius,
                 y = - Math.cos(radian) * radius,
                 self = this;
-            
+
             if (svgSupported && delay) {
                 self.canvas.addClass('jqclockpicker-canvas-out');
                 setTimeout(function() {
@@ -648,8 +649,8 @@
                 unit = Math.PI / (isHours || roundBy5 ? 6 : 30),
                 z = Math.sqrt(x * x + y * y),
                 options = this.options,
-                inner = isHours && z < (outerRadius + innerRadius) / 2,
-                radius = inner ? innerRadius : outerRadius,
+                inner = isHours && z >= (outerRadius + innerRadius) / 2,
+                radius = isHours ? (inner ? outerRadius : innerRadius) : outerRadius,
                 value;
 
             if (options.format === '12h') {
@@ -686,7 +687,8 @@
                     if (value === 12) {
                         value = 0;
                     }
-                    value = inner ? (value === 0 ? 12 : value) : value === 0 ? 0 : value + 12;
+                    // value = inner ? (value === 0 ? 12 : value) : value === 0 ? 0 : value + 12;
+                    value = inner ? (value === 0 ? 12 : value) : (value === 0 ? 0 : value + 12);
                 } else {
                     if (roundBy5) {
                         value *= 5;
@@ -747,7 +749,7 @@
                 cy = - Math.cos(radian) * radius,
                 x2 = Math.sin(radian) * (radius - this.bg.getAttribute('r')),
                 y2 = - Math.cos(radian) * (radius - this.bg.getAttribute('r'));
-            
+
             this.hand.setAttribute('x2', x2);
             this.hand.setAttribute('y2', y2);
             this.bg.setAttribute('cx', cx);
@@ -776,7 +778,7 @@
         done: function() {
             raiseCallback(this.options.beforeDone);
             this.hide();
-        
+
             this._updateInput();
 
             if (this.options.autoClose) {
@@ -916,7 +918,7 @@
             if (this.hasOwnProperty('hours') && this.hasOwnProperty('minutes')) {
                 var last = this.input.prop('value'),
                     value = leadingZero(this.hours) + ':' + leadingZero(this.minutes);
-            
+
                 if (this.options.format === '12h') {
                     value = value + this.amOrPm;
                 }
@@ -961,7 +963,7 @@
         return this.each(function() {
             var $this = $(this),
                 data = $this.data('jqclockpicker');
-            
+
             if (!data) {
                 var options = $.extend({}, JQClockPicker.DEFAULTS, $this.data(), typeof option == 'object' && option);
                 $this.data('jqclockpicker', new JQClockPicker($this, options));
